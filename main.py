@@ -6,33 +6,42 @@ from RPLCD import CharLCD
 
 from data_extractor import get_cases
 from progress_bar_chars import *
+from custom_chars import *
 
 LCD_CHAR_WIDTH = 16
-SLEEP_SECONDS = 2
+SLEEP_SECONDS = 7
 REFRESH_INFO_SLEEP_SECONDS = 4
 SECONDS_TO_REFRESH_DATA = 1500
 MAX_DATA_WIDTH = 8
 PROGRESS_OUTLINE = False
 
+
 lcd = CharLCD(numbering_mode=GPIO.BCM, cols=16, rows=2, pin_rs=25, pin_e=24, pins_data=[23, 17, 4, 27])
 
-if PROGRESS_OUTLINE:
-    lcd.create_char(0, BAR_0_5_OUTLINE)
-    lcd.create_char(1, BAR_1_5_OUTLINE)
-    lcd.create_char(2, BAR_2_5_OUTLINE)
-    lcd.create_char(3, BAR_3_5_OUTLINE)
-    lcd.create_char(4, BAR_4_5_OUTLINE)
-    lcd.create_char(5, BAR_5_5_OUTLINE)
-    lcd.create_char(6, BAR_END_5_OUTLINE)
-else:
-    lcd.create_char(0, BAR_0_5)
-    lcd.create_char(1, BAR_1_5)
-    lcd.create_char(2, BAR_2_5)
-    lcd.create_char(3, BAR_3_5)
-    lcd.create_char(4, BAR_4_5)
-    lcd.create_char(5, BAR_5_5)
-    lcd.create_char(6, BAR_END_5)
 
+def get_stat_chars(lcd):
+    lcd.create_char(0, SIGMA)
+    lcd.create_char(1, UP_ARROW)
+
+    return chr(0), chr(1)
+
+def prepare_progress_bar_chars(lcd): 
+    if PROGRESS_OUTLINE:
+        lcd.create_char(0, BAR_0_5_OUTLINE)
+        lcd.create_char(1, BAR_1_5_OUTLINE)
+        lcd.create_char(2, BAR_2_5_OUTLINE)
+        lcd.create_char(3, BAR_3_5_OUTLINE)
+        lcd.create_char(4, BAR_4_5_OUTLINE)
+        lcd.create_char(5, BAR_5_5_OUTLINE)
+        lcd.create_char(6, BAR_END_5_OUTLINE)
+    else:
+        lcd.create_char(0, BAR_0_5)
+        lcd.create_char(1, BAR_1_5)
+        lcd.create_char(2, BAR_2_5)
+        lcd.create_char(3, BAR_3_5)
+        lcd.create_char(4, BAR_4_5)
+        lcd.create_char(5, BAR_5_5)
+        lcd.create_char(6, BAR_END_5)
 
 
 lcd.clear()
@@ -82,32 +91,35 @@ while True:
         except AttributeError:
             pass
         refresh_seconds_left = SECONDS_TO_REFRESH_DATA
-
-    lcd.write_string(f'WLD ALL:{cases["World"]["cases"].rjust(MAX_DATA_WIDTH)}')
+    
+    TOTAL_SYMBOL, NEW_SYMBOL = get_stat_chars(lcd)
+    # rjust(11) because after ': ' there are only 9 char spaces left
+    lcd.write_string(f'WLD {TOTAL_SYMBOL}: {cases["World"]["cases"].rjust(9)}')
     lcd.cursor_pos = (1,0)
-    lcd.write_string(f'WLD NEW:{cases["World"]["new"].rjust(MAX_DATA_WIDTH)}')
+    lcd.write_string(f'WLD {NEW_SYMBOL}: {cases["World"]["new"].rjust(9)}')
     lcd.cursor_pos = (0,0)
 
     sleep(SLEEP_SECONDS)
     refresh_seconds_left -= SLEEP_SECONDS
 
     # lcd.clear()
-    lcd.write_string(f'POL ALL:{cases["Poland"]["cases"].rjust(MAX_DATA_WIDTH)}')
+    lcd.write_string(f'POL {TOTAL_SYMBOL}: {cases["Poland"]["cases"].rjust(9)}')
     lcd.cursor_pos = (1,0)
-    lcd.write_string(f'POL NEW:{cases["Poland"]["new"].rjust(MAX_DATA_WIDTH)}')
+    lcd.write_string(f'POL {NEW_SYMBOL}: {cases["Poland"]["new"].rjust(9)}')
     lcd.cursor_pos = (0,0)
     sleep(SLEEP_SECONDS)
     refresh_seconds_left -= SLEEP_SECONDS
 
-    closed_cases_fraction = int(cases["World"]["cases"].replace(',','')) 
-    closed_cases_fraction -= int(cases["World"]["active"].replace(',',''))
-    closed_cases_fraction /= int(cases["World"]["cases"].replace(',',''))
+    closed_cases_fraction = int(cases["World"]["cases"].replace(',', '')) 
+    closed_cases_fraction -= int(cases["World"]["active"].replace(',', ''))
+    closed_cases_fraction /= int(cases["World"]["cases"].replace(',', ''))
 
     lcd.write_string('Control:   {:.1%}'.format(closed_cases_fraction))
     lcd.cursor_pos = (1,0)
+    prepare_progress_bar_chars(lcd)
     lcd.write_string(number_to_progress_bar(closed_cases_fraction))
     lcd.cursor_pos = (0,0)
-    sleep(SLEEP_SECONDS+10)
+    sleep(SLEEP_SECONDS)
     refresh_seconds_left -= SLEEP_SECONDS
 
     # lcd.clear()
